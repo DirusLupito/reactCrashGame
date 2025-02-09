@@ -10,6 +10,7 @@ const PlotCanvas = ({ balance, setBalance }) => {
     const [textColor, setTextColor] = useState('red');
     const [targetMultiplier, setTargetMultiplier] = useState('');
     const [autoSellEnabled, setAutoSellEnabled] = useState(false);
+    const [loanAmount, setLoanAmount] = useState(0);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -113,6 +114,12 @@ const PlotCanvas = ({ balance, setBalance }) => {
         }
     };
 
+    const handleTakeLoan = () => {
+        const loan = 100; // Fixed loan amount
+        setBalance(balance + loan);
+        setLoanAmount(loanAmount + loan);
+    };
+
     return (
         <div>
             <canvas ref={canvasRef} width={500} height={500} />
@@ -127,6 +134,7 @@ const PlotCanvas = ({ balance, setBalance }) => {
                 <button onClick={handleAllIn} disabled={gameState !== 'roundOver'}>All In</button>
                 <button onClick={handleSell}>Sell</button>
                 <button onClick={handleQuickBuyIn} disabled={gameState !== 'roundOver' || !previousBuyInAmount}>Quick buy in at previous amount</button>
+                <button onClick={handleTakeLoan}>Take 100 dollar Loan</button>
             </div>
             <div>
                 <input
@@ -142,6 +150,7 @@ const PlotCanvas = ({ balance, setBalance }) => {
             <div>
                 <p>Balance: ${balance.toFixed(2)}</p>
                 <p>Gamble Balance: ${gambleBalance.toFixed(2)}</p>
+                <p>Loan Amount: ${loanAmount.toFixed(2)}</p>
             </div>
         </div>
     );
