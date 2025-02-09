@@ -1,3 +1,3 @@
 # reactCrashGame
 Crash game from Stake.us, coded in React.
-Initial code copied from financial hackathon Hack_NCState 2025 project.
+Game of the year edition of the gamble game from the financial hackathon Hack_NCState 2025 project.
