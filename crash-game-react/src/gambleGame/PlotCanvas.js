@@ -5,8 +5,11 @@ const PlotCanvas = ({ balance, setBalance }) => {
     const [gambleBalance, setGambleBalance] = useState(0);
     const [multiplier, setMultiplier] = useState(1.00);
     const [buyInAmount, setBuyInAmount] = useState('');
+    const [previousBuyInAmount, setPreviousBuyInAmount] = useState(null);
     const [gameState, setGameState] = useState('roundOver'); // 'roundOngoing', 'roundOver'
     const [textColor, setTextColor] = useState('red');
+    const [targetMultiplier, setTargetMultiplier] = useState('');
+    const [autoSellEnabled, setAutoSellEnabled] = useState(false);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -33,16 +36,24 @@ const PlotCanvas = ({ balance, setBalance }) => {
         updateCanvas();
     }, [multiplier, textColor]);
 
+    // Handles increasing the multiplier
     useEffect(() => {
         let interval;
         if (gameState === 'roundOngoing') {
             interval = setInterval(() => {
-                if (Math.random() < 0.01) { // value * 100 percent chance
-                    handleGameEnd();
-                } else {
-                    setMultiplier(prevMultiplier => prevMultiplier + 0.01 * prevMultiplier); // Increase by 1% of the current multiplier
-                }
+                setMultiplier(prevMultiplier => prevMultiplier + 0.01 * prevMultiplier);
             }, 100);
+        }
+
+        return () => clearInterval(interval);
+    }, [gameState]);
+
+    // Handles crashing
+    useEffect(() => {
+        if (gameState === 'roundOngoing') {
+            if (Math.random() < 0.01) { // value * 100 percent chance
+                handleGameEnd();
+            }
         } else if (gameState === 'roundOver') {
             const timeout = setTimeout(() => {
                 setGameState('roundOngoing');
@@ -51,9 +62,15 @@ const PlotCanvas = ({ balance, setBalance }) => {
 
             return () => clearTimeout(timeout);
         }
+    }
+    , [multiplier]);
 
-        return () => clearInterval(interval);
-    }, [gameState]);
+    // Handles autosell
+    useEffect(() => {
+        if (autoSellEnabled && targetMultiplier && multiplier >= parseFloat(targetMultiplier)) {
+            handleSell();
+        }
+    }, [multiplier]);
 
     const handleGameEnd = () => {
         console.log('crash, eradicated ' + gambleBalance + ' dollars');
@@ -68,7 +85,15 @@ const PlotCanvas = ({ balance, setBalance }) => {
         if (!isNaN(amount) && amount > 0 && amount <= balance) {
             setBalance(balance - amount);
             setGambleBalance(gambleBalance + amount);
+            setPreviousBuyInAmount(amount);
             setBuyInAmount('');
+        }
+    };
+
+    const handleQuickBuyIn = () => {
+        if (previousBuyInAmount && previousBuyInAmount <= balance) {
+            setBalance(balance - previousBuyInAmount);
+            setGambleBalance(gambleBalance + previousBuyInAmount);
         }
     };
 
@@ -85,7 +110,6 @@ const PlotCanvas = ({ balance, setBalance }) => {
             setBalance(balance + sellAmount);
             console.log(`Sold!`);
             setGambleBalance(0);
-            setMultiplier(1); // Reset multiplier after selling
         }
     };
 
@@ -102,6 +126,18 @@ const PlotCanvas = ({ balance, setBalance }) => {
                 <button onClick={handleBuyIn} disabled={gameState !== 'roundOver'}>Buy In</button>
                 <button onClick={handleAllIn} disabled={gameState !== 'roundOver'}>All In</button>
                 <button onClick={handleSell}>Sell</button>
+                <button onClick={handleQuickBuyIn} disabled={gameState !== 'roundOver' || !previousBuyInAmount}>Quick buy in at previous amount</button>
+            </div>
+            <div>
+                <input
+                    type="number"
+                    value={targetMultiplier}
+                    onChange={(e) => setTargetMultiplier(e.target.value)}
+                    placeholder="Enter target multiplier"
+                />
+                <button onClick={() => setAutoSellEnabled(!autoSellEnabled)}>
+                    {autoSellEnabled ? 'Disable Auto-Sell' : 'Enable Auto-Sell'}
+                </button>
             </div>
             <div>
                 <p>Balance: ${balance.toFixed(2)}</p>
